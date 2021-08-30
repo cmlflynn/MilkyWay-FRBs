@@ -18,7 +18,6 @@ def power_law(N,E0,alpha):
         sys.exit()
     # set up energies relative to minimum energy E0
     E = E0*x
-#    E = E0*x/x
     return E
 
 def dN_dE_plot(E,bins):    
@@ -60,10 +59,10 @@ def get_SN(E,w,telescope):
         area = 0.2*0.2  # m^2
         gain = area*f/2.0/k*1E-26
         # STARE2 --> GReX
-        # gain is 1/3rd of STARE2
-        gain = gain / 3.0
-        Tsys = 25.0 # K
+        Tsys = 100.0 # K
         SEFD = Tsys/gain
+        # this is a quick way to implement GReX -- should be done better
+        SEFD = SEFD / 3.0  # SEFD is 3 times better than STARE2
         w_sec = w*1E-3 # width in sec
         f0 = 1.4E9 # Hz
         E_detected = E/(4.0*np.pi*(dist*3.09e+19)**2) # J/m^2
@@ -146,6 +145,7 @@ grex_dist = dist_narrow[snmask_grex]
 sky = np.random.rand(len(grex_dist))
 mask = sky < 0.5
 grex_dist = grex_dist[mask]
+
 # histogram of FRB distances versus distance from Sun for GReX
 plt.hist(grex_dist,bins=bins,color='g',label="GReX",width=0.9,alpha=0.5)
 
@@ -154,10 +154,9 @@ plt.ylabel("N")
 plt.title("STARE2 versus GReX")
 plt.legend()
 
-print("GReX FRBs : "+str(np.sum(grex_dist)))
-print("STARE2 FRBs : "+str(np.sum(stare2_dist)))
-
-print("ratio = "+str(np.sum(grex_dist)/np.sum(stare2_dist)))
+print("GReX FRBs : "+str(len(grex_dist)))
+print("STARE2 FRBs : "+str(len(stare2_dist)))
+print("ratio = "+str(len(grex_dist)/float(len(stare2_dist))))
 
 plt.show()
 
@@ -200,20 +199,20 @@ snmask = SN_narrow > 10
 nsubplot = 1
 ax = plt.subplot(ny,nx,nsubplot)
 dE = 0.25 # Joules
-bins = np.arange(np.log10(E0)-dE,40.0,dE)
+bins = np.arange(np.log10(E0)-dE,45.0,dE)+7.0
 # bin all the FRBs 
-Ebin, N_Ebin = dN_dE_plot(E,bins)
+Ebin, N_Ebin = dN_dE_plot(1e7*E,bins)
 plt.bar(Ebin,N_Ebin,color='b',width=0.4,label="All FRBs")
 # bin the FRBs that are narrow enough to detect
-Ebin, N_Ebin = dN_dE_plot(E[wmask],bins)
+Ebin, N_Ebin = dN_dE_plot(1e7*E[wmask],bins)
 plt.bar(Ebin,N_Ebin,color='g',width=0.4,label="w<"+str(w_max)+"ms")
 # bin the narrow FRBs that have S/N>10
-Ebin, N_Ebin = dN_dE_plot(E_narrow[snmask],bins)
+Ebin, N_Ebin = dN_dE_plot(1e7*E_narrow[snmask],bins)
 plt.bar(Ebin,N_Ebin,color='r',width=0.4,label="S/N>10")
 plt.ylim(0,)
-plt.xlabel("log10(E) [J]")
+plt.xlabel("log10(E) [erg]")
 plt.ylabel("log10(N)")
-plt.title(filename+"\nLF model : E0 = "+str(E0)+" J, alpha = "+str(alpha))
+#plt.title(filename+"\nLF model : E0 = "+str(E0+7)+" erg, alpha = "+str(alpha))
 plt.text(0.9, 0.9, '(a)', horizontalalignment='center',verticalalignment='center', transform=ax.transAxes)
 #plt.legend()
 nsubplot += 1
@@ -226,8 +225,8 @@ ax = plt.subplot(ny,nx,nsubplot)
 plt.plot(np.log10(dist),np.log10(w),'b,',label="All FRBs")
 plt.plot(np.log10(dist[wmask]),np.log10(w[wmask]),'g,',label="w<"+str(w_max)+"ms")
 plt.plot(np.log10(dist_narrow[snmask]),np.log10(w_narrow[snmask]),'r.',ms=1,label="S/N>10")
-plt.xlabel("dist [kpc]")
-plt.ylabel("width [ms]")
+plt.xlabel("log dist [kpc]")
+plt.ylabel("log width [ms]")
 plt.text(0.1, 0.9, '(b)', horizontalalignment='center',verticalalignment='center', transform=ax.transAxes)
 #plt.legend()
 nsubplot += 1
@@ -240,8 +239,8 @@ ax = plt.subplot(ny,nx,nsubplot)
 plt.plot(np.log10(dm),np.log10(w),'b,',label="All FRBs")
 plt.plot(np.log10(dm[wmask]),np.log10(w[wmask]),'g,',label="w<"+str(w_max)+"ms")
 plt.plot(np.log10(dm_narrow[snmask]),np.log10(w_narrow[snmask]),'r.',ms=1,label="S/N>10")
-plt.xlabel("DM [pc/cc]")
-plt.ylabel("width [ms]")
+plt.xlabel("log DM [pc/cc]")
+plt.ylabel("log width [ms]")
 plt.text(0.1, 0.9, '(c)', horizontalalignment='center',verticalalignment='center', transform=ax.transAxes)
 #plt.legend()
 nsubplot += 1
@@ -295,31 +294,32 @@ plt.hist(np.log10(SN),bins=snbins,log=True,color='b',label="All FRBs")
 plt.hist(np.log10(SN[wmask]),bins=snbins,log=True,color='g',label="w<"+str(w_max)+"ms")
 plt.hist(np.log10(SN_narrow[snmask]),bins=snbins,log=True,color='r',label="S/N>10")
 plt.xlabel("log(S/N)")
-plt.ylabel("N")
+plt.ylabel("log N")
 plt.text(0.9, 0.9, '(g)', horizontalalignment='center',verticalalignment='center', transform=ax.transAxes)
 nsubplot += 1
 
 # side view of FRBs in Milky Way
-ax = plt.subplot(ny,nx,nsubplot)
-plt.plot(x,z,'b,',label="FRBs")
-plt.plot(x[wmask],z[wmask],'g,',label="w<"+str(w_max)+"ms")
-plt.plot(x_narrow[snmask],z_narrow[snmask],'r.',ms=1,label="S/N>10")
-plt.xlim(-Rmax,Rmax)
-plt.ylim(-Zmax,Zmax)
-plt.plot(Rsun, 0.0, 'yo',label ="Sun")
-plt.plot(0.0, 0.0, 'ko', label="Galactic Center")
-plt.xlabel("X [kpc]")
-plt.ylabel("Z [kpc]")
-plt.text(0.9, 0.9, '(h)', horizontalalignment='center',verticalalignment='center', transform=ax.transAxes)
+#ax = plt.subplot(ny,nx,nsubplot)
+#plt.plot(x,z,'b,',label="FRBs")
+#plt.plot(x[wmask],z[wmask],'g,',label="w<"+str(w_max)+"ms")
+#plt.plot(x_narrow[snmask],z_narrow[snmask],'r.',ms=1,label="S/N>10")
+#plt.xlim(-Rmax,Rmax)
+#plt.ylim(-Zmax,Zmax)
+#plt.plot(Rsun, 0.0, 'yo',label ="Sun")
+#plt.plot(0.0, 0.0, 'ko', label="Galactic Center")
+#plt.xlabel("X [kpc]")
+#plt.ylabel("Z [kpc]")
+#plt.text(0.9, 0.9, '(h)', horizontalalignment='center',verticalalignment='center', transform=ax.transAxes)
 #plt.legend()
+
+ax = plt.subplot(ny,nx,nsubplot)
+plt.loglog(dm_narrow[snmask],E_narrow[snmask],'b.',label="Mock FRBs")
+plt.xlabel("log DM [pc/cc]")
+plt.ylabel("log E [J]")
+plt.loglog(333.0,1e27,'y*',label="SGR1935",ms=20)
+plt.title(filename+"\nLF model : E0 = "+str(E0)+" J, alpha = "+str(alpha))
 
 plt.tight_layout()
 
 plt.show()
 
-plt.loglog(dm_narrow[snmask],E_narrow[snmask],'b.',label="Mock FRBs")
-plt.xlabel("DM [pc/cc]")
-plt.ylabel("E [J]")
-plt.loglog(333.0,1e27,'y*',label="SGR1935",ms=20)
-plt.title(filename+"\nLF model : E0 = "+str(E0)+" J, alpha = "+str(alpha))
-plt.show()
