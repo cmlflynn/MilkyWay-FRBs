@@ -24,6 +24,9 @@ X,Y,Z coordinates are in kpc, dist is the distance from the Sun (kpc), DM is in 
 
 Some widths can be very large -- no width larger than 100 ms has significance as it is essentially undetectible in any present or planned survey.
 
+They are set up to produce around 350,000 sources. This can be controlled with Nfrbs -- this is the number simulated in order, after appropriate spatial selections
+are applied, results in around 350,000 sources.
+
 To analyse the FRBs:
 
 python analyze_frbs.py frbsample_ymw16_0.05_1.4_.csv 1e25 -1.5
